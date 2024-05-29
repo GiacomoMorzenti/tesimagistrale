@@ -1,0 +1,1464 @@
+library(DiceKriging)
+library(e1071)
+library(ggplot2)
+branin <- function(xx, a=1, b=5.1/(4*pi^2), c=5/pi, r=6, s=10, t=1/(8*pi))
+{
+
+  
+  x1 <- xx[1]
+  x2 <- xx[2]
+  
+  term1 <- a * (x2 - b*x1^2 + c*x1 - r)^2
+  term2 <- s*(1-t)*cos(x1)
+  
+  y <- term1 + term2 + s
+  return(y)
+}
+
+### n=10/20/30
+
+### variare di Beta, ottimizzare svm nu,gamma,cost per ridurre False
+
+size <- 30       #length of random number vectors
+set.seed(5) 
+x <- runif(size,min = -5,max = 10)          # generate samples from uniform distribution (0.0, 1.0)
+y <- runif(size,min = 0, max = 15) 
+df <-data.frame(x,y)
+df
+#df[1,]=c(pi,2.275)
+
+
+
+
+for (i in 1:size) {
+  df[i,3] = branin(c(df[i,1],df[i,2]))
+}
+df1 = df
+
+min=branin(c(pi,2.275))
+mindati=min(df[,3])
+
+mindati
+min
+
+m1 <- km(design=df[,c(1,2)], response=df[,3])
+
+design.fact <- expand.grid(x=seq(-5,10,length=60), y=seq(0,15,length=60))
+design.fact
+plot(design.fact$x,design.fact$y)
+
+
+plot(df$x, df$y, xlim=c(-5,10),ylim=c(0,15))
+points(dfmin$xmin, dfmin$ymin, col="red")
+
+a=predict(m1,newdata=design.fact, type="UK")
+
+par(mfrow=c(1,1))
+#####    Beta = 1
+for (i in 1:length(design.fact[,1])){
+  design.fact[i,3] = a$mean[i] - a$sd[i]
+}
+design.fact
+
+punti=which(design.fact[,3]<mindati)
+
+datiSVM = design.fact[punti,]
+plot(datiSVM[,1], datiSVM[,2])
+points(dfmin$xmin, dfmin$ymin, col="red")
+
+
+####################################################################
+
+xmin=c(-pi,pi,9.42478)
+ymin=c(12.275,2.275,2.475)
+dfmin=data.frame(xmin,ymin)
+plot(dfmin,xlim=c(-5,10),ylim=c(0,15), add=TRUE, col="red")
+plo1 <- plot(dfmin,xlim=c(-5,10),ylim=c(0,15), add=TRUE, col="red")
+
+####################################################################
+
+#####   Beta = 2
+for (i in 1:length(design.fact[,1])){
+  design.fact[i,4] = a$mean[i] - (2*a$sd[i])
+}
+design.fact
+
+punti2=which(design.fact[,4]<mindati)
+
+datiSVM2 = design.fact[punti2,]
+plot(datiSVM2[,1], datiSVM2[,2])
+
+
+
+#####   Beta = 3
+for (i in 1:length(design.fact[,1])){
+  design.fact[i,5] = a$mean[i] - (3*a$sd[i])
+}
+design.fact
+
+punti3=which(design.fact[,5]<mindati)
+
+datiSVM3 = design.fact[punti3,]
+plot(datiSVM3[,1], datiSVM3[,2])
+
+
+
+#####   Beta = 0
+for (i in 1:length(design.fact[,1])){
+  design.fact[i,6] = a$mean[i] 
+}
+design.fact
+
+punti0=which(design.fact[,6]<mindati)
+punti0
+datiSVM0 = design.fact[punti0,]
+plot(datiSVM0[,1], datiSVM0[,2])
+
+
+par(mfrow=c(2,2))
+plot(datiSVM[,1], datiSVM[,2], xlim=c(-5,10),ylim=c(0,15))
+points(dfmin$xmin, dfmin$ymin, col="red")
+plot(datiSVM2[,1], datiSVM2[,2],xlim=c(-5,10),ylim=c(0,15))
+points(dfmin$xmin, dfmin$ymin, col="red")
+plot(datiSVM3[,1], datiSVM3[,2],xlim=c(-5,10),ylim=c(0,15))
+points(dfmin$xmin, dfmin$ymin, col="red")
+plot(datiSVM0[,1], datiSVM0[,2],xlim=c(-5,10),ylim=c(0,15))
+points(dfmin$xmin, dfmin$ymin, col="red")
+
+######################################### DBSCAN ###########################################
+library(dbscan)
+
+
+
+
+modellodb2 = dbscan(datiSVM2[,c(1,2)], eps = 0.5, minPts = 2)
+modellodb2
+plot(datiSVM2[,c(1,2)], col = modellodb2$cluster)
+points(dfmin$xmin, dfmin$ymin, col="blue")
+
+etichette21=which(modellodb2$cluster == 1)
+cluster1=datiSVM2[etichette21,]
+length(cluster1[,1])
+
+cluster1
+centroidecluster1 = c(mean(cluster1$x), mean(cluster1$y))
+centroidecluster1
+
+points(centroidecluster1[1], centroidecluster1[2], col="purple", pch=5)
+
+
+centroidecluster2 = c(mean(cluster2$x), mean(cluster2$y))
+centroidecluster2
+
+points(centroidecluster2[1], centroidecluster2[2], col="purple", pch=5)
+
+
+
+centroidecluster3 = c(mean(cluster3$x), mean(cluster3$y))
+centroidecluster3
+
+points(centroidecluster3[1], centroidecluster3[2], col="purple")
+
+
+
+minimo21 = which.min(cluster1[,4])
+puntominimo21 = cluster1[minimo21,]
+puntominimo21
+
+points(puntominimo21$x, puntominimo21$y, col="yellow")
+
+
+etichette22=which(modellodb2$cluster == 2)
+cluster2=datiSVM2[etichette22,]
+length(cluster2[,1])
+
+cluster2
+
+minimo22 = which.min(cluster2[,4])
+puntominimo22 = cluster2[minimo22,]
+puntominimo22
+
+points(puntominimo22$x, puntominimo22$y, col="yellow")
+
+etichette23=which(modellodb2$cluster == 3)
+cluster3=datiSVM2[etichette23,]
+length(cluster3[,1])
+
+cluster3
+
+datiSVM0
+minimo23 = which.min(cluster3[,4])
+puntominimo23 = cluster3[minimo23,]
+puntominimo23
+
+points(puntominimo23$x, puntominimo23$y, col="yellow")
+
+
+
+modellodb = dbscan(datiSVM[,c(1,2)], eps = 0.5, minPts = 2)
+modellodb
+plot(datiSVM[,c(1,2)], col = modellodb$cluster)
+points(dfmin$xmin, dfmin$ymin, col="blue")
+
+
+
+
+modellodb2 = dbscan(datiSVM2[,c(1,2)], eps = 0.5, minPts = 2)
+modellodb2
+plot(datiSVM2[,c(1,2)], col = modellodb2$cluster)
+points(dfmin$xmin, dfmin$ymin, col="blue")
+
+
+modellodb3 = dbscan(datiSVM3[,c(1,2)], eps = 0.5, minPts = 2)
+modellodb3
+plot(datiSVM3[,c(1,2)], col = modellodb3$cluster)
+points(dfmin$xmin, dfmin$ymin, col="blue")
+
+
+
+
+
+
+
+
+
+################################# SVM ######################################################
+#n=30
+one_class_svm_model <- svm(datiSVM3[,c(1,2)], y = NULL,
+                           type = 'one-classification',scale = FALSE, kernel = "radial", cost = 100, nu = 0.005, gamma = 0.5)
+
+
+one_class_svm_model <- svm(datiSVM2[,c(1,2)], y = NULL,
+                         type = 'one-classification',scale = FALSE, kernel = "radial", cost = 100, nu = 0.005, gamma = 0.5) 
+
+one_class_svm_model <- svm(datiSVM[,c(1,2)], y = NULL,
+                           type = 'one-classification',scale = FALSE, kernel = "radial", cost = 100, nu = 0.01, gamma = 0.5) 
+##diminuendo gamma si ottiene un'accuracy maggiore, ma si esce dai margini (aumentiamo anche i falsi positivi)
+
+
+#n=20 
+one_class_svm_model <- svm(datiSVM3[,c(1,2)], y = NULL,
+                           type = 'one-classification',scale = FALSE, kernel = "radial", cost = 100, nu = 0.01, gamma = 0.5)
+#effetto gamma 0.1, migliore accuracy ma falsi positivi
+#si creano ponti tra i diversi gruppi
+one_class_svm_model <- svm(datiSVM2[,c(1,2)], y = NULL,
+                           type = 'one-classification',scale = FALSE, kernel = "radial", cost = 100, nu = 0.01, gamma = 0.5)
+
+one_class_svm_model <- svm(datiSVM[,c(1,2)], y = NULL,
+                           type = 'one-classification',scale = FALSE, kernel = "radial", cost = 100, nu = 0.01, gamma = 0.5)
+
+##print(one_class_svm_model)
+##plot(one_class_svm_model$SV)
+
+#con le y dei corrispondenti modelli svm fittati sui datisvm associati
+
+SVM3=data.frame(design.fact[y,1],design.fact[y,2])
+plot(SVM3)
+
+SVM2=data.frame(design.fact[y,1],design.fact[y,2])
+plot(SVM2)
+
+SVM1=data.frame(design.fact[y,1],design.fact[y,2])
+plot(SVM1)
+
+
+SVMTOT=rbind(SVM1,SVM2,SVM3)
+
+n=500   #lunghezza del dataframe richiesto
+
+etichette_finali=sample(1:length(SVMTOT$design.fact.y..1.), n)
+dati_finali=SVMTOT[etichette_finali,]
+dati_finali
+plot(dati_finali, xlim=c(-5,10),ylim=c(0,15))
+
+branin(c(-3.220339 , 11.1864407))
+min
+
+####################################
+par(mfrow=c(2,2))
+
+y=predict(one_class_svm_model,design.fact[,c(1,2)])
+
+
+
+
+sum(one_class_svm_model$fitted)/length(one_class_svm_model$fitted)
+
+
+plot(datiSVM3[,1],datiSVM3[,2],xlim=c(-5,10),ylim=c(0,15) )
+
+plot(design.fact[y,1],design.fact[y,2],xlim=c(-5,10),ylim=c(0,15) )
+
+image(x=unique(design.fact[,1]), y=unique(design.fact[,2]),z = matrix(design.fact[,5], nrow=60),
+      col=heat.colors(100,rev = T))
+
+contour(x=unique(design.fact[,1]), y=unique(design.fact[,2]),z = matrix(design.fact[,5], nrow=60),
+      col="grey",add=T,nlevels = 30)
+
+temp=design.fact[,5]
+temp[which(temp>min)] = NA
+
+image(x=unique(design.fact[,1]), y=unique(design.fact[,2]),z = matrix(temp, nrow=60),
+      col=heat.colors(100,rev = T))
+
+
+
+#######################
+
+datiSVM3
+cluster1=datiSVM3[which(datiSVM3$y>8),]
+cluster1
+min.cluster1=cluster1[which.min(cluster1$V3),]
+min.cluster1
+plot(min.cluster1$x, min.cluster1$y, xlim=c(-5,10),ylim=c(0,15))
+plot( datiSVM3[which(datiSVM3$y>8),]$x,  datiSVM3[which(datiSVM3$y>8),]$y)
+
+media.c1=c(x=mean(cluster1$x), y=mean(cluster1$y))
+# plot(media.c1[1], media.c1[2],xlim=c(-5,10),ylim=c(0,15))
+plo1 <- plot(media.c1[1], media.c1[2],xlim=c(-5,10),ylim=c(0,15))
+
+
+#plot(df[,1],df[,2])
+
+xmin=c(-pi,pi,9.42478)
+ymin=c(12.275,2.275,2.475)
+dfmin=data.frame(xmin,ymin)
+plot(dfmin,xlim=c(-5,10),ylim=c(0,15), add=TRUE, col="red")
+plo1 <- plot(dfmin,xlim=c(-5,10),ylim=c(0,15), add=TRUE, col="red")
+
+##################################################################################################################à
+library(DiceKriging)
+library(e1071)
+library(dbscan)
+
+
+hart6 <- function(xx)
+{
+
+  alpha <- c(1.0, 1.2, 3.0, 3.2)
+  A <- c(10, 3, 17, 3.5, 1.7, 8,
+         0.05, 10, 17, 0.1, 8, 14,
+         3, 3.5, 1.7, 10, 17, 8,
+         17, 8, 0.05, 10, 0.1, 14)
+  A <- matrix(A, 4, 6, byrow=TRUE)
+  P <- 10^(-4) * c(1312, 1696, 5569, 124, 8283, 5886,
+                   2329, 4135, 8307, 3736, 1004, 9991,
+                   2348, 1451, 3522, 2883, 3047, 6650,
+                   4047, 8828, 8732, 5743, 1091, 381)
+  P <- matrix(P, 4, 6, byrow=TRUE)
+  
+  xxmat <- matrix(rep(xx,times=4), 4, 6, byrow=TRUE)
+  inner <- rowSums(A[,1:6]*(xxmat-P[,1:6])^2)
+  outer <- sum(alpha * exp(-inner))
+  
+  y <- -(2.58 + outer) / 1.94
+  return(y)
+}
+
+set.seed(1)
+size <- 200     #length of random number vectors
+
+x1 <- runif(size,min = 0,max = 1)          # generate samples from uniform distribution (0.0, 1.0)
+x2 <- runif(size,min = 0,max = 1)
+x3 <- runif(size,min = 0,max = 1)
+x4 <- runif(size,min = 0,max = 1)
+x5 <- runif(size,min = 0,max = 1)
+x6 <- runif(size,min = 0,max = 1)
+
+df <-data.frame(x1,x2,x3,x4,x5,x6)
+df
+
+for (i in 1:size) {
+  df[i,7] = hart6(c(df[i,1],df[i,2],df[i,3], df[i,4], df[i,5], df[i,6]))
+}
+df
+
+
+min=min(df[,7])
+min
+
+group=NA
+group[c(1:200)]=1
+group[201]=2
+
+pairs(rbind(df[,c(1:6)], puntominimoglobale),
+      col=c("black", "red")[group])
+
+
+pairs(  rbind(hartdatiSVM[,c(1:6)], puntominimolocale[,c(1:6)], puntominimoglobale), 
+        xlim=c(0,1), ylim=c(0,1),
+        col=c("black", "red", "blue")[group],
+)
+
+
+
+minimolocale = which.min(df[,7])
+puntominimolocale = df[minimolocale,]
+puntominimolocale
+
+m1 <- km(design=df[,c(1:6)], response=df[,7])
+
+
+l1=10
+design.fact <- expand.grid(x1=seq(0.1,1,length=l1), 
+                           x2=seq(0.1,1,length=l1), 
+                           x3=seq(0.1,1,length=l1), 
+                           x4=seq(0.1,1,length=l1), 
+                           x5=seq(0.1,1,length=l1), 
+                           x6=seq(0.1,1,length=l1) )
+
+a=predict(m1,newdata=design.fact, type="UK")
+design.fact
+
+#####    Beta = 1
+#t1 = Sys.time()
+#for (i in 1:length(design.fact[,1])){
+#  design.fact[i,7] = a$mean[i] - a$sd[i]
+#}
+#cat("tempo:",difftime(Sys.time(),t1,units = "secs"))
+
+
+
+#####    Beta = 1
+t1 = Sys.time()
+design.fact[,7]=apply(cbind(a$mean, a$sd),1, function(x) {x[1] - x[2]})
+design.fact
+
+cat("tempo:",difftime(Sys.time(),t1,units = "secs"))
+
+puntominimoglobale = c(0.20169, 0.150011, 0.476874, 0.275332, 0.311652, 0.6573)
+
+minimo1=which.min(design.fact[,7])
+puntominimo1=design.fact[minimo1,c(1:6)]
+
+hart6(c(puntominimo1[1,1], puntominimo1[1,2], puntominimo1[1,3],
+      puntominimo1[1,4], puntominimo1[1,5], puntominimo1[1,6]))
+
+min
+punti=which(design.fact[,7]<min)
+
+datiSVM = design.fact[punti,]
+plot(datiSVM[,1], datiSVM[,2], xlim=c(0,1), ylim=c(0,1))
+length(datiSVM[,1])
+
+datiSVM
+hartdatiSVM=datiSVM
+
+length(hartdatiSVM[,1])
+
+
+group=NA
+group[1:length(hartdatiSVM[,1])] = 1
+group[length(hartdatiSVM[,1]) +1] = 2
+group[length(hartdatiSVM[,1]) +2] = 3
+group[length(hartdatiSVM[,1]) +3] = 3
+group
+
+
+pairs(hartdatiSVM,  xlim=c(0,1), ylim=c(0,1))
+
+
+pairs(  rbind(hartdatiSVM[,c(1:6)], puntominimoglobale, puntominimocluster1[,c(1:6)], puntominimocluster2[,c(1:6)]), 
+        xlim=c(0,1), ylim=c(0,1),
+        col=c("black", "red","purple")[group],
+        )
+
+length(hartdatiSVM[,1])
+
+
+pairs(  rbind(hartdatiSVM[,c(1:6)], puntominimoglobale, centroidecluster1, centroidecluster2), 
+        xlim=c(0,1), ylim=c(0,1),
+        col=c("black", "red","yellow")[group],
+)
+
+
+
+
+
+
+x1mean=mean(hartdatiSVM[,1]) 
+x2mean=mean(hartdatiSVM[,2]) 
+x3mean=mean(hartdatiSVM[,3]) 
+x4mean=mean(hartdatiSVM[,4]) 
+x5mean=mean(hartdatiSVM[,5]) 
+x6mean=mean(hartdatiSVM[,6]) 
+
+min
+hart6(c(x1mean, x2mean, x3mean, x4mean, x5mean, x6mean))
+
+############################ DBSCAN #####################
+modellodb = dbscan(hartdatiSVM[,c(1:6)], eps = 0.19, minPts = 2)
+modellodb
+plot(hartdatiSVM[,c(1,2)], col = modellodb$cluster, xlim=c(0,1), ylim=c(0,1))
+pairs(rbind(hartdatiSVM[,c(1:6)],puntominimoglobale), col = c(modellodb$cluster,3), xlim=c(0,1), ylim=c(0,1))
+
+etichette1=which(modellodb$cluster == 1)
+cluster1=hartdatiSVM[etichette1,]
+
+length(cluster1[,1])
+
+cluster1
+
+minimocluster1 = which.min(cluster1[,7])
+puntominimocluster1 = cluster1[minimocluster1,]
+puntominimocluster1
+
+centroidecluster1 = c( mean(cluster1[,1]), mean(cluster1[,2]), mean(cluster1[,3]),
+                       mean(cluster1[,4]), mean(cluster1[,5]), mean(cluster1[,6]))
+centroidecluster1
+
+hart6(centroidecluster1)
+min
+
+
+etichette2=which(modellodb$cluster == 2)
+cluster2=hartdatiSVM[etichette2,]
+
+length(cluster2[,1])
+
+centroidecluster2 = c( mean(cluster2[,1]), mean(cluster2[,2]), mean(cluster2[,3]),
+                       mean(cluster2[,4]), mean(cluster2[,5]), mean(cluster2[,6]))
+hart6(centroidecluster2)
+min
+
+minimocluster2 = which.min(cluster2[,7])
+puntominimocluster2 = cluster2[minimocluster2,]
+puntominimocluster2
+
+
+
+minimo2=which.min(design.fact[,8])
+puntominimo2=design.fact[minimo2,c(1:6)]
+
+hart6(c(puntominimocluster2[1,1], puntominimocluster2[1,2], puntominimocluster2[1,3],
+        puntominimocluster2[1,4], puntominimocluster2[1,5], puntominimocluster2[1,6]))
+
+hart6(c(puntominimocluster1[1,1], puntominimocluster1[1,2], puntominimocluster1[1,3],
+        puntominimocluster1[1,4], puntominimocluster1[1,5], puntominimocluster1[1,6]))
+
+
+
+
+
+
+hartdatiSVM
+#########################################################
+
+#####    Beta = 2
+t1 = Sys.time()
+design.fact[,8]=apply(cbind(a$mean, a$sd),1, function(x) {x[1] - 2*x[2]})
+design.fact
+
+cat("tempo:",difftime(Sys.time(),t1,units = "secs"))
+
+
+
+######   Beta = 2
+#for (i in 1:length(design.fact[,1])){
+#  design.fact[i,8] = a$mean[i] - (2*a$sd[i])
+#}
+#design.fact
+
+punti2=which(design.fact[,8]<min)
+
+datiSVM2 = design.fact[punti2,]
+plot(datiSVM2[,1], datiSVM2[,2],xlim=c(0,1), ylim=c(0,1))
+
+
+
+
+group=NA
+group[1:length(hartdatiSVM2[,1])] = 1
+group[length(hartdatiSVM2[,1]) +1] = 2
+
+pairs(  rbind(hartdatiSVM2[,c(1:6)], puntominimoglobale), 
+        xlim=c(0,1), ylim=c(0,1),
+        col=c("black", "red")[group],
+)
+
+pairs(datiSVM2[,c(1:6)], xlim=c(0,1), ylim=c(0,1))
+length(datiSVM2[,1])
+
+x21mean=mean(hartdatiSVM2[,1]) 
+x22mean=mean(hartdatiSVM2[,2]) 
+x23mean=mean(hartdatiSVM2[,3]) 
+x24mean=mean(hartdatiSVM2[,4]) 
+x25mean=mean(hartdatiSVM2[,5]) 
+x26mean=mean(hartdatiSVM2[,6]) 
+
+min
+hart6(c(x21mean, x22mean, x23mean, x24mean, x25mean, x26mean))
+
+
+
+
+hartdatiSVM2=datiSVM2
+
+############################ DBSCAN #####################
+modellodb2 = dbscan(hartdatiSVM2[,c(1:6)], eps = 0.19, minPts = 2)
+modellodb2
+plot(hartdatiSVM2[,c(1,2)], col = modellodb2$cluster, xlim=c(0,1), ylim=c(0,1))
+pairs(rbind(hartdatiSVM2[,c(1:6)],puntominimoglobale), col = c(modellodb2$cluster,3), xlim=c(0,1), ylim=c(0,1))
+
+length(hartdatiSVM2[,1])
+modellodb2$cluster
+
+
+etichette1=which(modellodb2$cluster == 1)
+cluster1=hartdatiSVM2[etichette1,]
+
+length(cluster1[,1])
+
+centroidecluster1 = c( mean(cluster1[,1]), mean(cluster1[,2]), mean(cluster1[,3]),
+                       mean(cluster1[,4]), mean(cluster1[,5]), mean(cluster1[,6]))
+centroidecluster1
+
+hart6(centroidecluster1)
+min
+
+
+etichette2=which(modellodb2$cluster == 2)
+cluster2=hartdatiSVM2[etichette2,]
+
+length(cluster2[,1])
+
+centroidecluster2 = c( mean(cluster2[,1]), mean(cluster2[,2]), mean(cluster2[,3]),
+                       mean(cluster2[,4]), mean(cluster2[,5]), mean(cluster2[,6]))
+hart6(centroidecluster2)
+min
+
+minimo2=which.min(design.fact[,8])
+puntominimo2=design.fact[minimo2,c(1:6)]
+
+hart6(c(puntominimo2[1,1], puntominimo2[1,2], puntominimo2[1,3],
+        puntominimo2[1,4], puntominimo2[1,5], puntominimo2[1,6]))
+
+#####
+
+minimocluster1 = which.min(cluster1[,8])
+puntominimocluster1 = cluster1[minimocluster1,]
+puntominimocluster1
+
+centroidecluster1 = c( mean(cluster1[,1]), mean(cluster1[,2]), mean(cluster1[,3]),
+                       mean(cluster1[,4]), mean(cluster1[,5]), mean(cluster1[,6]))
+centroidecluster1
+
+hart6(centroidecluster1)
+min
+
+
+etichette2=which(modellodb$cluster == 2)
+cluster2=hartdatiSVM[etichette2,]
+
+length(cluster2[,1])
+
+centroidecluster2 = c( mean(cluster2[,1]), mean(cluster2[,2]), mean(cluster2[,3]),
+                       mean(cluster2[,4]), mean(cluster2[,5]), mean(cluster2[,6]))
+hart6(centroidecluster2)
+min
+
+minimocluster2 = which.min(cluster2[,8])
+puntominimocluster2 = cluster2[minimocluster2,]
+puntominimocluster2
+
+
+
+minimo2=which.min(design.fact[,8])
+puntominimo2=design.fact[minimo2,c(1:6)]
+
+hart6(c(puntominimocluster2[1,1], puntominimocluster2[1,2], puntominimocluster2[1,3],
+        puntominimocluster2[1,4], puntominimocluster2[1,5], puntominimocluster2[1,6]))
+
+hart6(c(puntominimocluster1[1,1], puntominimocluster1[1,2], puntominimocluster1[1,3],
+        puntominimocluster1[1,4], puntominimocluster1[1,5], puntominimocluster1[1,6]))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#########################################################
+
+#####    Beta = 3
+t1 = Sys.time()
+design.fact[,9]=apply(cbind(a$mean, a$sd),1, function(x) {x[1] - 3*x[2]})
+design.fact
+
+cat("tempo:",difftime(Sys.time(),t1,units = "secs"))
+
+#####   Beta = 3
+#for (i in 1:length(design.fact[,1])){
+#  design.fact[i,9] = a$mean[i] - (3*a$sd[i])
+#}
+#design.fact
+
+punti3=which(design.fact[,9]<min)
+
+datiSVM3 = design.fact[punti3,]
+plot(datiSVM3[,1], datiSVM3[,2], xlim=c(0,1), ylim=c(0,1))
+pairs(datiSVM3[,c(1:6)], xlim=c(0,1), ylim=c(0,1))
+
+
+
+group=NA
+group[1:length(hartdatiSVM3[,1])] = 1
+group[length(hartdatiSVM3[,1]) +1] = 2
+
+pairs(  rbind(hartdatiSVM3[,c(1:6)], puntominimoglobale), 
+        xlim=c(0,1), ylim=c(0,1),
+        col=c("black", "red")[group],
+)
+
+
+length(datiSVM3[,1])
+hartdatiSVM3=datiSVM3
+
+
+
+x31mean=mean(hartdatiSVM3[,1]) 
+x32mean=mean(hartdatiSVM3[,2]) 
+x33mean=mean(hartdatiSVM3[,3]) 
+x34mean=mean(hartdatiSVM3[,4]) 
+x35mean=mean(hartdatiSVM3[,5]) 
+x36mean=mean(hartdatiSVM3[,6]) 
+
+min
+hart6(c(x31mean, x32mean, x33mean, x34mean, x35mean, x36mean))
+
+
+############################ DBSCAN #####################
+modellodb3 = dbscan(hartdatiSVM3[,c(1:6)], eps = 0.19, minPts = 2)
+modellodb3
+plot(hartdatiSVM3[,c(1,2)], col = modellodb3$cluster, xlim=c(0,1), ylim=c(0,1))
+pairs(rbind(hartdatiSVM3[,c(1:6)],puntominimoglobale), col = c(modellodb3$cluster,3)
+      , xlim=c(0,1), ylim=c(0,1))
+
+
+etichette31=which(modellodb3$cluster == 1)
+cluster31=hartdatiSVM3[etichette31,]
+
+length(cluster31[,1])
+
+centroidecluster31 = c( mean(cluster31[,1]), mean(cluster31[,2]), mean(cluster31[,3]),
+                       mean(cluster31[,4]), mean(cluster31[,5]), mean(cluster31[,6]))
+hart6(centroidecluster31)
+min
+
+etichette32=which(modellodb3$cluster == 2)
+cluster32=hartdatiSVM3[etichette32,]
+
+length(cluster32[,1])
+
+centroidecluster32 = c( mean(cluster32[,1]), mean(cluster32[,2]), mean(cluster32[,3]),
+                       mean(cluster32[,4]), mean(cluster32[,5]), mean(cluster32[,6]))
+hart6(centroidecluster32)
+min
+
+etichette33=which(modellodb3$cluster == 3)
+cluster33=hartdatiSVM3[etichette33,]
+
+length(cluster33[,1])
+
+centroidecluster33 = c( mean(cluster33[,1]), mean(cluster33[,2]), mean(cluster33[,3]),
+                        mean(cluster33[,4]), mean(cluster33[,5]), mean(cluster33[,6]))
+hart6(centroidecluster33)
+min
+
+###################################
+
+etichette1=which(modellodb$cluster == 1)
+cluster1=hartdatiSVM[etichette1,]
+
+length(cluster1[,1])
+
+cluster31
+
+minimocluster1 = which.min(cluster31[,9])
+puntominimocluster1 = cluster31[minimocluster1,]
+puntominimocluster1
+
+centroidecluster1 = c( mean(cluster1[,1]), mean(cluster1[,2]), mean(cluster1[,3]),
+                       mean(cluster1[,4]), mean(cluster1[,5]), mean(cluster1[,6]))
+centroidecluster1
+
+hart6(centroidecluster1)
+min
+
+
+etichette2=which(modellodb$cluster == 2)
+cluster2=hartdatiSVM[etichette2,]
+
+length(cluster2[,1])
+
+centroidecluster2 = c( mean(cluster2[,1]), mean(cluster2[,2]), mean(cluster2[,3]),
+                       mean(cluster2[,4]), mean(cluster2[,5]), mean(cluster2[,6]))
+hart6(centroidecluster2)
+min
+
+minimocluster2 = which.min(cluster32[,9])
+puntominimocluster2 = cluster32[minimocluster2,]
+puntominimocluster2
+
+
+
+minimo2=which.min(design.fact[,8])
+puntominimo2=design.fact[minimo2,c(1:6)]
+
+hart6(c(puntominimocluster2[1,1], puntominimocluster2[1,2], puntominimocluster2[1,3],
+        puntominimocluster2[1,4], puntominimocluster2[1,5], puntominimocluster2[1,6]))
+
+hart6(c(puntominimocluster1[1,1], puntominimocluster1[1,2], puntominimocluster1[1,3],
+        puntominimocluster1[1,4], puntominimocluster1[1,5], puntominimocluster1[1,6]))
+
+
+
+minimo3=which.min(design.fact[,9])
+puntominimo3=design.fact[minimo3,c(1:6)]
+
+hart6(c(puntominimo3[1,1], puntominimo3[1,2], puntominimo3[1,3],
+        puntominimo3[1,4], puntominimo3[1,5], puntominimo3[1,6]))
+#metodo di sintesi: minimo valore media - beta*sd
+
+#########################################################
+
+#####    Beta = 0
+t1 = Sys.time()
+design.fact[,10]=apply(cbind(a$mean, a$sd),1, function(x) {x[1] })
+design.fact
+
+cat("tempo:",difftime(Sys.time(),t1,units = "secs"))
+
+
+#####   Beta = 0
+#for (i in 1:length(design.fact[,1])){
+#  design.fact[i,10] = a$mean[i] 
+#}
+#design.fact
+
+punti0=which(design.fact[,10]<min)
+punti0
+datiSVM0 = design.fact[punti0,]
+length(datiSVM0[,1])
+
+pairs(datiSVM0[,c(1:6)],xlim=c(0,1), ylim=c(0,1))
+
+
+
+#pairs(  rbind(hartdatiSVM[,c(1:6)], puntominimolocale[,c(1:6)], puntominimoglobale), 
+#        xlim=c(0,1), ylim=c(0,1),
+#        col=c("black", "red")[group],
+#)
+
+group=NA
+group[1:length(hartdatiSVM0[,1])] = 1
+group[length(hartdatiSVM0[,1]) +1] = 2
+
+pairs(rbind( datiSVM0[,c(1:6)], puntominimoglobale), xlim=c(0,1), ylim=c(0,1),
+      col=c("black", "red")[group])
+
+hartdatiSVM0=datiSVM0
+################################################################
+modellodb0 = dbscan(hartdatiSVM0[,c(1:6)], eps = 0.19, minPts = 2)
+modellodb0
+plot(hartdatiSVM[,c(1,2)], col = modellodb$cluster, xlim=c(0,1), ylim=c(0,1))
+pairs(rbind(hartdatiSVM0[,c(1:6)], puntominimoglobale) , col = c(modellodb0$cluster,3), xlim=c(0,1), ylim=c(0,1))
+
+etichette1=which(modellodb0$cluster == 1)
+cluster1=hartdatiSVM0[etichette1,]
+
+hartdatiSVM0
+
+
+length(cluster1[,1])
+
+minimocluster1 = which.min(cluster1[,10])
+puntominimocluster1 = cluster1[minimocluster1,]
+puntominimocluster1
+
+centroidecluster1 = c( mean(cluster1[,1]), mean(cluster1[,2]), mean(cluster1[,3]),
+                       mean(cluster1[,4]), mean(cluster1[,5]), mean(cluster1[,6]))
+centroidecluster1
+
+hart6(centroidecluster1)
+min
+
+
+etichette2=which(modellodb0$cluster == 2)
+cluster2=hartdatiSVM0[etichette2,]
+
+length(cluster2[,1])
+
+centroidecluster2 = c( mean(cluster2[,1]), mean(cluster2[,2]), mean(cluster2[,3]),
+                       mean(cluster2[,4]), mean(cluster2[,5]), mean(cluster2[,6]))
+hart6(centroidecluster2)
+min
+
+minimocluster2 = which.min(cluster2[,10])
+puntominimocluster2 = cluster2[minimocluster2,]
+puntominimocluster2
+
+
+hart6(c(puntominimocluster2[1,1], puntominimocluster2[1,2], puntominimocluster2[1,3],
+        puntominimocluster2[1,4], puntominimocluster2[1,5], puntominimocluster2[1,6]))
+
+hart6(c(puntominimocluster1[1,1], puntominimocluster1[1,2], puntominimocluster1[1,3],
+        puntominimocluster1[1,4], puntominimocluster1[1,5], puntominimocluster1[1,6]))
+
+
+
+
+
+par(mfrow=c(2,2))
+plot(datiSVM[,1], datiSVM[,2], xlim=c(0,1),ylim=c(0,1))
+plot(datiSVM2[,1], datiSVM2[,2],xlim=c(0,1),ylim=c(0,1))
+plot(datiSVM3[,1], datiSVM3[,2],xlim=c(0,1),ylim=c(0,1))
+plot(datiSVM0[,1], datiSVM0[,2],xlim=c(0,1),ylim=c(0,1))
+
+############################################################################################ààà
+
+library(DiceKriging)
+library(e1071)
+library(dbscan)
+
+concrete=read.csv("concrete.arff", header=FALSE, comment.char = "@", sep = ",")
+colnames(concrete) = c('cement','blast_furnace_slag','fly_ash','water','superplasticizer','coarse_aggregate','fine_aggregate','age','strength')
+dim(concrete)
+#for (i in 1:length(concrete)-1){ 
+#  concrete[,i] = scale(concrete[,i], center = min(concrete[,i]), scale = max(concrete[,i]) - min(concrete[,i]) )
+#}
+
+
+hist(concrete$cement, breaks = 16)
+
+boxplot(concrete$cement)
+
+summary(concrete)
+
+var(concrete$cement)
+sd(concrete$cement)
+
+
+hist(concrete$blast_furnace_slag,15)
+
+boxplot(concrete$blast_furnace_slag)
+
+summary(concrete)
+
+sd(concrete$blast_furnace_slag)
+
+
+
+hist(concrete$fly_ash,15)
+
+boxplot(concrete$fly_ash)
+
+summary(concrete)
+
+sd(concrete$fly_ash)
+
+
+hist(concrete$water,15)
+
+boxplot(concrete$water)
+
+summary(concrete)
+
+sd(concrete$water)
+
+
+hist(concrete$superplasticizer,15)
+
+boxplot(concrete$superplasticizer)
+
+summary(concrete)
+
+sd(concrete$superplasticizer)
+
+
+
+
+hist(concrete$coarse_aggregate,15)
+
+boxplot(concrete$coarse_aggregate)
+
+summary(concrete)
+
+sd(concrete$coarse_aggregate)
+
+
+
+hist(concrete$fine_aggregate,15)
+
+boxplot(concrete$fine_aggregate)
+
+summary(concrete)
+
+sd(concrete$fine_aggregate)
+
+
+
+hist(concrete$age,15)
+
+boxplot(concrete$age)
+
+summary(concrete)
+
+sd(concrete$age)
+
+library(corrplot)
+
+cor(concrete)
+corrplot(cor(concrete))
+
+
+concrete[,1] = scale(concrete[,1], center = min(concrete[,1]), scale = max(concrete[,1]) - min(concrete[,1]) )
+concrete[,2] = scale(concrete[,2], center = min(concrete[,2]), scale = max(concrete[,2]) - min(concrete[,2]) )
+d=8
+concrete[,d] = scale(concrete[,d], center = min(concrete[,d]), scale = max(concrete[,d]) - min(concrete[,d]) )
+
+summary(concrete)
+boxplot(concrete[,1:8])
+
+concrete
+anyNA(concrete)
+summary(concrete)
+
+massimo = which.max(concrete[,9])
+concrete[massimo,]
+
+
+concrete = concrete[-massimo,]
+
+maxdati=max(concrete[,9])
+maxdati
+
+etmassimo = which.max(concrete[,9])
+puntomassimo = concrete[etmassimo,]
+puntomassimo
+
+summary(concrete)
+
+
+##################### variable selection using random forest #############################
+library(Boruta)
+library(mlbench)
+library(caret)
+library(randomForest)
+
+set.seed(111)
+boruta <- Boruta(strength ~ ., data = concrete, doTrace = 2, maxRuns = 500)
+print(boruta)
+
+plot(boruta, las = 2, cex.axis = 0.7)
+
+
+rand_frst <- randomForest(strength ~ ., data=concrete, ntree=100, keep.forest=FALSE, 
+                          importance=TRUE)
+randomForest::varImpPlot(rand_frst, 
+                         sort=FALSE, 
+                         main="Variable Importance Plot")
+
+importance( rand_frst)
+
+ctrl = trainControl(method = "cv", number = 10)
+
+fit.cv = train( strength ~., data = concrete, method = "rf", trControl = ctrl,
+                tuneLength = 50)
+
+plot(varImp(fit.cv))
+
+
+
+####################################################à
+
+
+
+m1 <- km(design=concrete[,c(1,2,4,5,7,8)], response=concrete[,9], nugget.estim = TRUE)
+
+l1=10
+design.fact <- expand.grid(cement = seq(0.1,1,length=l1), 
+                           blast_furnace_slag = seq(0.1,1,length=l1), 
+                           #fly_ash = seq(0.1,1,length=l1), 
+                           water = seq(0.1,1,length=l1), 
+                           superplasticizer = seq(0.1,1,length=l1), 
+                           #coarse_aggregate = seq(0.1,1,length=l1),
+                           fine_aggregate = seq(0.1,1,length=l1),
+                           age = seq(0.1,1,length=l1))                       
+
+design.fact
+
+
+
+a=predict(m1,newdata=design.fact, type="UK", checknames=F)
+a
+summary(a$mean)
+
+
+
+
+#####    Beta = 1
+t1 = Sys.time()
+design.fact[,7]=apply(cbind(a$mean, a$sd),1, function(x) {x[1] + x[2]})
+design.fact
+
+cat("tempo:",difftime(Sys.time(),t1,units = "secs"))
+
+
+punti=which(design.fact[,7] > maxdati)
+
+datiSVM = design.fact[punti,]
+plot(datiSVM[,1], datiSVM[,2], xlim=c(0,1), ylim=c(0,1))
+length(datiSVM[,1])
+
+pairs(datiSVM[,c(1:6)], xlim=c(0,1), ylim=c(0,1))
+
+summary(design.fact[,7])
+massimo1=which.max(design.fact[,7])
+
+puntomassimo1=design.fact[massimo1,c(1:7)]
+puntomassimo1
+
+massimo = which.max(concrete[,9])
+concrete[massimo,]
+
+############################ DBSCAN #####################
+modellodb = dbscan(datiSVM[,c(1:6)], eps = 0.19, minPts = 2)
+modellodb
+plot(datiSVM[,c(1,2)], col = modellodb$cluster, xlim=c(0,1), ylim=c(0,1))
+pairs(datiSVM[,c(1:6)], col = modellodb$cluster, xlim=c(0,1), ylim=c(0,1))
+
+datiSVM
+
+
+
+etichette1=which(modellodb0$cluster == 1)
+cluster1=datiSVM0[etichette1,]
+
+cluster1
+
+length(cluster1[,1])
+
+minimocluster1 = which.max(cluster1[,9])
+puntominimocluster1 = cluster1[minimocluster1,]
+puntominimocluster1
+
+centroidecluster1 = c( mean(cluster1[,1]), mean(cluster1[,2]), mean(cluster1[,3]),
+                       mean(cluster1[,4]), mean(cluster1[,5]), mean(cluster1[,6]))
+centroidecluster1
+
+
+etichette2=which(modellodb$cluster == 2)
+cluster2=datiSVM[etichette2,]
+
+length(cluster2[,1])
+
+centroidecluster2 = c( mean(cluster2[,1]), mean(cluster2[,2]), mean(cluster2[,3]),
+                       mean(cluster2[,4]), mean(cluster2[,5]), mean(cluster2[,6]))
+centroidecluster2
+
+
+minimocluster2 = which.max(cluster2[,7])
+puntominimocluster2 = cluster2[minimocluster2,]
+puntominimocluster2
+
+#########################################################
+
+
+
+#####    Beta = 2
+t1 = Sys.time()
+design.fact[,8]=apply(cbind(a$mean, a$sd),1, function(x) {x[1] + 2*x[2]})
+design.fact
+
+cat("tempo:",difftime(Sys.time(),t1,units = "secs"))
+
+
+
+punti2=which(design.fact[,8] > maxdati)
+
+datiSVM2 = design.fact[punti2,]
+plot(datiSVM2[,1], datiSVM2[,2],xlim=c(0,1), ylim=c(0,1))
+
+pairs(datiSVM2[,c(1:6)], xlim=c(0,1), ylim=c(0,1))
+length(datiSVM2[,1])
+
+
+############################ DBSCAN #####################
+modellodb2 = dbscan(datiSVM2[,c(1:6)], eps = 0.19, minPts = 2)
+modellodb2
+plot(datiSVM2[,c(1,2)], col = modellodb2$cluster, xlim=c(0,1), ylim=c(0,1))
+pairs(datiSVM2[,c(1:6)], col = modellodb2$cluster, xlim=c(0,1), ylim=c(0,1))
+
+
+#########################################################
+
+#####    Beta = 3
+#t1 = Sys.time()
+#design.fact[,9]=apply(cbind(a$mean, a$sd),1, function(x) {x[1] + 3*x[2]})
+#design.fact
+
+#cat("tempo:",difftime(Sys.time(),t1,units = "secs"))
+
+#punti3=which(design.fact[,9] > maxdati)
+
+#datiSVM3 = design.fact[punti3,]
+#plot(datiSVM3[,1], datiSVM3[,2], xlim=c(0,1), ylim=c(0,1))
+#pairs(datiSVM3[,c(1:6)], xlim=c(0,1), ylim=c(0,1))
+#length(datiSVM3[,1])
+
+############################ DBSCAN #####################
+#modellodb3 = dbscan(datiSVM3[,c(1:6)], eps = 0.19, minPts = 2)
+#modellodb3
+#plot(datiSVM3[,c(1,2)], col = modellodb3$cluster, xlim=c(0,1), ylim=c(0,1))
+#pairs(datiSVM3[,c(1:6)], col = modellodb3$cluster, xlim=c(0,1), ylim=c(0,1))
+
+design.fact
+#########################################################
+
+#####    Beta = 0
+t1 = Sys.time()
+design.fact[,9]=apply(cbind(a$mean, a$sd),1, function(x) {x[1] })
+design.fact
+
+cat("tempo:",difftime(Sys.time(),t1,units = "secs"))
+
+punti0=which(design.fact[,9] > maxdati)
+punti0
+datiSVM0 = design.fact[punti0,]
+pairs(datiSVM0[,c(1:6)], xlim=c(0,1), ylim=c(0,1))
+length(datiSVM0[,1])
+################################################################
+modellodb0 = dbscan(datiSVM0[,c(1:6)], eps = 0.19, minPts = 2)
+modellodb0
+plot(datiSVM[,c(1,2)], col = modellodb0$cluster, xlim=c(0,1), ylim=c(0,1))
+pairs(datiSVM0[,c(1:6)], col = modellodb0$cluster, xlim=c(0,1), ylim=c(0,1))
+
+
+
+etichette1=which(modellodb0$cluster == 1)
+cluster1=datiSVM0[etichette1,]
+
+cluster1
+
+length(cluster1[,1])
+
+minimocluster1 = which.max(cluster1[,9])
+puntominimocluster1 = cluster1[minimocluster1,]
+puntominimocluster1
+
+centroidecluster1 = c( mean(cluster1[,1]), mean(cluster1[,2]), mean(cluster1[,3]),
+                       mean(cluster1[,4]), mean(cluster1[,5]), mean(cluster1[,6]))
+centroidecluster1
+
+
+etichette2=which(modellodb0$cluster == 2)
+cluster2=datiSVM0[etichette2,]
+
+length(cluster2[,1])
+
+centroidecluster2 = c( mean(cluster2[,1]), mean(cluster2[,2]), mean(cluster2[,3]),
+                       mean(cluster2[,4]), mean(cluster2[,5]), mean(cluster2[,6]))
+centroidecluster2
+
+
+minimocluster2 = which.max(cluster2[,9])
+puntominimocluster2 = cluster2[minimocluster2,]
+puntominimocluster2
+
+
+
+
+#####################################################################
+#####    Beta = 0.5
+t1 = Sys.time()
+design.fact[,10]=apply(cbind(a$mean, a$sd),1, function(x) {x[1] + 0.5*x[2]})
+design.fact
+
+cat("tempo:",difftime(Sys.time(),t1,units = "secs"))
+
+punti05=which(design.fact[,10] > maxdati)
+punti05
+datiSVM05 = design.fact[punti05,]
+pairs(datiSVM05[,c(1:6)], xlim=c(0,1), ylim=c(0,1))
+length(datiSVM05[,1])
+
+################################################################
+modellodb05 = dbscan(datiSVM05[,c(1:6)], eps = 0.19, minPts = 2)
+modellodb05
+plot(datiSVM05[,c(1,2)], col = modellodb05$cluster, xlim=c(0,1), ylim=c(0,1))
+pairs(datiSVM05[,c(1:6)], col = modellodb05$cluster, xlim=c(0,1), ylim=c(0,1))
+
+
+
+etichette1=which(modellodb05$cluster == 1)
+cluster1=datiSVM05[etichette1,]
+
+cluster1
+
+length(cluster1[,1])
+
+minimocluster1 = which.max(cluster1[,10])
+puntominimocluster1 = cluster1[minimocluster1,]
+puntominimocluster1
+
+centroidecluster1 = c( mean(cluster1[,1]), mean(cluster1[,2]), mean(cluster1[,3]),
+                       mean(cluster1[,4]), mean(cluster1[,5]), mean(cluster1[,6]))
+centroidecluster1
+
+
+etichette2=which(modellodb05$cluster == 2)
+cluster2=datiSVM05[etichette2,]
+
+length(cluster2[,1])
+
+centroidecluster2 = c( mean(cluster2[,1]), mean(cluster2[,2]), mean(cluster2[,3]),
+                       mean(cluster2[,4]), mean(cluster2[,5]), mean(cluster2[,6]))
+centroidecluster2
+
+
+minimocluster2 = which.max(cluster2[,10])
+puntominimocluster2 = cluster2[minimocluster2,]
+puntominimocluster2
+
+
+
+
+
+
+
+
+#####    Beta = 1.5
+t1 = Sys.time()
+design.fact[,11]=apply(cbind(a$mean, a$sd),1, function(x) {x[1] + 1.5*x[2]})
+design.fact
+
+cat("tempo:",difftime(Sys.time(),t1,units = "secs"))
+
+punti15=which(design.fact[,11] > maxdati)
+punti15
+datiSVM15 = design.fact[punti15,]
+pairs(datiSVM15[,c(1:6)], xlim=c(0,1), ylim=c(0,1))
+length(datiSVM15[,1])
+
+################################################################
+modellodb15 = dbscan(datiSVM15[,c(1:6)], eps = 0.19, minPts = 2)
+modellodb15
+plot(datiSVM05[,c(1,2)], col = modellodb05$cluster, xlim=c(0,1), ylim=c(0,1))
+pairs(datiSVM05[,c(1:6)], col = modellodb05$cluster, xlim=c(0,1), ylim=c(0,1))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#media = numeric(1000000)  
+#devstand = numeric(1000000)
+#w = 10000
+#for (i in 1:10000) {
+#  a = predict(m1,newdata=design.fact[((i-1)*w+1):(i*w),], type="UK", checknames=F)
+#  media[((i-1)*w+1):(i*w)] = a$mean
+#  devstand[((i-1)*w+1):(i*w)] = a$sd
+#}
+
+
+
+massimo = which.max(concrete[,9])
+concrete[massimo,]
+
+
+
+concrete1 = concrete[-massimo,]
+summary(concrete1)
+
+concrete1
+
+massimo1 = which.max(concrete1[,9])
+concrete1[massimo1,]
+
+
+
+
+
+##############################################
+
+
+summary(concrete)
+bfsrange= max(concrete[,2]) - min(concrete[,2])
+bfsrange
+
+minbfs = min(concrete[,2])
+
+
+
+x=c(0,0.5,1)
+x*cementrange+mincement
+
+x=c(1, 0.8838279, 0.7, 0.7068182, 1,  0.8732334, 0.8,    0.7215742, 1,  0.8857143)
+ 
+cacca=C()
+
+bfs = c(0.9,0.8191395,0.4,0.4524242,1,0.7943255,0.3,0.4926031,0.1,0.2553571)
+length(bfs)
+
+bfs*bfsrange
+
+
+waterrange = max(concrete[,4]) - min(concrete[,4])
+waterrange
+minwater = min(concrete[,4])
+
+water = c(0.6, 0.5764095,  0.2, 0.2136364,  0.6, 0.5839400, 0.2, 0.2023708,  0.4, 0.40 )
+length(water)
+
+
+water*waterrange+minwater
+
+sprange = max(concrete[,5]) - min(concrete[,5])
+sprange
+
+sp = c(0.4, 0.3477745, 0.2, 0.2822727, 0.4, 0.3422377, 0.2, 0.3036036,  0.1,0.1250 )
+
+sp * sprange
+summary(concrete)
+
+
+faggrrange = max(concrete[,7]) - min(concrete[,7])
+minfaggr = min(concrete[,7])
+minfaggr
+faggr = c( 0.2, 0.1980712,  0.4, 0.4134848,  0.2, 0.2281049, 0.4, 0.4268374,  0.1, 0.1107143)
+length(faggr)
+
+faggr*faggrrange+minfaggr
+
+
+
+rangeage = max(concrete[,8]) - min(concrete[,8])
+minage = min(concrete[,8])
+age = c(0.1, 0.1366469, 0.1, 0.1634848, 0.1, 0.1467345,0.2, 0.1826458,0.6, 0.6303571)
+length(age)
+
+age*rangeage+minage
